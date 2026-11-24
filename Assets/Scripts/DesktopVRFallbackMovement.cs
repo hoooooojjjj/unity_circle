@@ -8,13 +8,13 @@ public class DesktopVRFallbackMovement : MonoBehaviour
     [Header("Movement (Arrow Keys / WASD)")]
     [SerializeField] private float moveSpeed = 2.0f;
     [SerializeField] private float sprintMultiplier = 2.0f;
-    [SerializeField] private float fallbackEyeHeight = 0.65f;
+    [SerializeField] private float fallbackEyeHeight = 1.45f;
 
     [Header("Editor Look (Mouse Right-Drag / Q-E)")]
     [SerializeField] private float mouseSensitivity = 0.18f;
     [SerializeField] private float keyTurnSpeed = 60f;
-    [SerializeField] private float desktopFieldOfView = 35f;
-    [SerializeField] private float initialDesktopPitch = 0f;
+    [SerializeField] private float desktopFieldOfView = 50f;
+    [SerializeField] private float initialDesktopPitch = 4f;
     [SerializeField] private Transform headTransform;
 
     private float _pitch;
@@ -78,20 +78,14 @@ public class DesktopVRFallbackMovement : MonoBehaviour
         if (_initializedDesktopPose) return;
         _initializedDesktopPose = true;
 
-        Vector3 pos = transform.position;
-        pos.y = fallbackEyeHeight;
-        transform.position = pos;
-
+        // 씬에 배치된 현재 위치를 그대로 시작 위치로 유지
         _yaw = transform.eulerAngles.y;
-        _pitch = initialDesktopPitch;
+        _pitch = headTransform != null ? headTransform.localEulerAngles.x : initialDesktopPitch;
+        if (_pitch > 180f) _pitch -= 360f;
 
-        if (headTransform != null)
+        if (headTransform != null && headTransform.TryGetComponent<Camera>(out var cam))
         {
-            headTransform.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
-            if (headTransform.TryGetComponent<Camera>(out var cam))
-            {
-                cam.fieldOfView = desktopFieldOfView;
-            }
+            cam.fieldOfView = desktopFieldOfView;
         }
     }
 
