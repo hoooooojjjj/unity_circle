@@ -41,6 +41,11 @@ sysinfo.txt
 # Crashlytics / Unity cache
 crashlytics-build.properties
 Temp/
+.utmp/
+*_BurstDebugInformation_DoNotShip/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+*.apk
+*.aab
 
 # macOS
 .DS_Store

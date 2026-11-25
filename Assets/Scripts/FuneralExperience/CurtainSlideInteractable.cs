@@ -120,7 +120,9 @@ public class CurtainSlideInteractable : MonoBehaviour
         }
 
         HandleVRSlide();
+#if UNITY_EDITOR
         HandleDesktopTest();
+#endif
     }
 
     private void HandleVRSlide()
@@ -129,12 +131,14 @@ public class CurtainSlideInteractable : MonoBehaviour
 
         if (_grabbingHand == null)
         {
-            TryStartVRGrab(_rig.rightHandAnchor, false);
-            if (_grabbingHand == null) TryStartVRGrab(_rig.leftHandAnchor, true);
+            Transform rightCtrl = VRHandInput.GetHandTransform(_rig, false);
+            Transform leftCtrl = VRHandInput.GetHandTransform(_rig, true);
+            TryStartVRGrab(rightCtrl, false);
+            if (_grabbingHand == null) TryStartVRGrab(leftCtrl, true);
         }
         else
         {
-            bool stillHolding = IsHandGripping(_isLeftHand, 0.35f);
+            bool stillHolding = VRHandInput.IsGrabbing(_isLeftHand, 0.30f);
             if (!stillHolding)
             {
                 _grabbingHand = null;
@@ -156,7 +160,7 @@ public class CurtainSlideInteractable : MonoBehaviour
             _autoClosing = false;
             ApplyCurtainFold(_openProgress);
 
-            if (_openProgress >= 0.92f)
+            if (_openProgress >= 0.85f)
             {
                 _grabbingHand = null;
                 _autoOpening = true;
@@ -167,23 +171,26 @@ public class CurtainSlideInteractable : MonoBehaviour
     private void TryStartVRGrab(Transform hand, bool isLeft)
     {
         if (hand == null) return;
-        if (!IsHandGripping(isLeft, 0.5f)) return;
+        if (!VRHandInput.IsGrabbing(isLeft, 0.40f)) return;
 
         Vector3 hp = hand.position;
-        if (hp.y < minGrabHeight || hp.y > maxGrabHeight) return;
+        if (hp.y < 0.1f || hp.y > 2.3f) return;
 
-        // 커튼의 현재 우측 끝(X, Z) 근처인지 판정
-        float dx = hp.x - CurrentRightEdgeX;
-        float dz = hp.z - _closedPos.z;
-        float distXZ = Mathf.Sqrt(dx * dx + dz * dz);
+        // 커튼의 우측 절반 영역 어디를 잡아도 자연스럽게 잡히도록 여유 있게 판정
+        float rightEdge = CurrentRightEdgeX;
+        float minX = _leftEdgeX + (_closedWorldWidth * 0.30f);
+        float maxX = rightEdge + grabRadius;
+        float dz = Mathf.Abs(hp.z - _closedPos.z);
 
-        if (distXZ <= grabRadius)
+        if (hp.x >= minX && hp.x <= maxX && dz <= grabRadius + 0.15f)
         {
             _grabbingHand = hand;
             _isLeftHand = isLeft;
             _grabStartHandX = hp.x;
             _grabStartProgress = _openProgress;
             _autoClosing = false;
+            VRHandInput.SendHaptic(isLeft, 0.4f, 0.08f);
+            Debug.Log("[CurtainSlide] VR 컨트롤러로 커튼을 잡았습니다! 왼쪽(-X)으로 슬라이드하세요.");
         }
     }
 
@@ -191,11 +198,11 @@ public class CurtainSlideInteractable : MonoBehaviour
     {
         if (isLeft)
         {
-            return OVRInput.Get(OVRInput.Axis1D.PrimaryHandTrigger) > threshold
-                || OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > threshold;
+            return OVRInput.Get(OVRInput.RawAxis1D.LHandTrigger) > threshold
+                || OVRInput.Get(OVRInput.RawAxis1D.LIndexTrigger) > threshold;
         }
-        return OVRInput.Get(OVRInput.Axis1D.SecondaryHandTrigger) > threshold
-            || OVRInput.Get(OVRInput.Axis1D.SecondaryIndexTrigger) > threshold;
+        return OVRInput.Get(OVRInput.RawAxis1D.RHandTrigger) > threshold
+            || OVRInput.Get(OVRInput.RawAxis1D.RIndexTrigger) > threshold;
     }
 
     private void HandleDesktopTest()

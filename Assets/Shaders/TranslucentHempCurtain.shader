@@ -4,6 +4,7 @@ Shader "Custom/TranslucentHempCurtain"
     {
         _BaseMap ("Hemp Weave (RGBA)", 2D) = "white" {}
         _BaseColor ("Tint Color", Color) = (0.96, 0.84, 0.64, 0.92)
+        _Opacity ("Opacity (투명도)", Range(0.0, 1.0)) = 1.0
         _BacklightColor ("Backlight Glow Color", Color) = (1.0, 0.76, 0.40, 1.0)
         _Translucency ("Backlight Translucency", Range(0.0, 4.0)) = 2.0
         _WrapLighting ("Soft Wrap Lighting", Range(0.0, 1.0)) = 0.65
@@ -66,6 +67,7 @@ Shader "Custom/TranslucentHempCurtain"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
+                half _Opacity;
                 half4 _BacklightColor;
                 half _Translucency;
                 half _WrapLighting;
@@ -152,7 +154,9 @@ Shader "Custom/TranslucentHempCurtain"
                 float fresnel = pow(1.0 - saturate(abs(dot(normalWS, viewDirWS))), 2.6);
                 lighting += lighting * fresnel * _RimStrength;
 
-                half alpha = saturate(tex.a * _BaseColor.a);
+                // Boost cloth density so Opacity=1 feels rich & mostly opaque while keeping subtle weave透
+                half weaveAlpha = lerp(0.58, 1.0, tex.a);
+                half alpha = saturate(weaveAlpha * _BaseColor.a * _Opacity);
                 return half4(lighting, alpha);
             }
             ENDHLSL

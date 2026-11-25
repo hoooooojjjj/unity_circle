@@ -14,10 +14,45 @@ public class ProceduralCurtainMesh : MonoBehaviour
     [SerializeField] private float bottomWave = 0.015f;
     [SerializeField] private float seedOffset = 0.0f;
 
-    private Mesh _mesh;
+    [Header("개별 커튼 투명도 (0 = 완전 투명, 1 = 기본)")]
+    [Range(0f, 1f)]
+    [SerializeField] private float opacity = 1.0f;
 
-    private void OnEnable() => Rebuild();
-    private void OnValidate() => Rebuild();
+    private static readonly int OpacityPropId = Shader.PropertyToID("_Opacity");
+    private Mesh _mesh;
+    private MaterialPropertyBlock _mpb;
+
+    public float Opacity
+    {
+        get => opacity;
+        set
+        {
+            opacity = Mathf.Clamp01(value);
+            ApplyOpacity();
+        }
+    }
+
+    private void OnEnable()
+    {
+        Rebuild();
+        ApplyOpacity();
+    }
+
+    private void OnValidate()
+    {
+        Rebuild();
+        ApplyOpacity();
+    }
+
+    public void ApplyOpacity()
+    {
+        var mr = GetComponent<MeshRenderer>();
+        if (mr == null) return;
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
+        mr.GetPropertyBlock(_mpb);
+        _mpb.SetFloat(OpacityPropId, opacity);
+        mr.SetPropertyBlock(_mpb);
+    }
 
     public void Rebuild()
     {

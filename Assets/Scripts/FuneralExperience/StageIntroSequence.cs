@@ -35,6 +35,8 @@ public class StageIntroSequence : MonoBehaviour
     public VideoPlayer videoPlayer;
     public Renderer videoSurfaceRenderer;
     public float videoFadeOutDuration = 1.5f;
+    [Tooltip("영상이 Fade Out될 때 투명도를 1로 복원할 커튼들 (비우면 씬의 모든 커튼 자동 적용)")]
+    public ProceduralCurtainMesh[] curtainsToRestoreOpacity;
 
     [Header("2. 장례지도사 1차 음성 (영상 종료 후)")]
     [Tooltip("영상이 Fade Out된 뒤 재생될 1차 안내 음성")]
@@ -94,6 +96,11 @@ public class StageIntroSequence : MonoBehaviour
         if (rig != null && rig.centerEyeAnchor != null) _visitorHead = rig.centerEyeAnchor;
         else if (Camera.main != null) _visitorHead = Camera.main.transform;
 
+        if (curtainsToRestoreOpacity == null || curtainsToRestoreOpacity.Length == 0)
+        {
+            curtainsToRestoreOpacity = FindObjectsByType<ProceduralCurtainMesh>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        }
+
         if (videoPlayer != null) videoPlayer.loopPointReached += OnVideoFinished;
         if (curtainSlide != null)
         {
@@ -118,6 +125,7 @@ public class StageIntroSequence : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
         Keyboard kb = Keyboard.current;
         if (kb == null) return;
 
@@ -140,6 +148,7 @@ public class StageIntroSequence : MonoBehaviour
         {
             chrysanthemum.DesktopToggleGrabOrPlace();
         }
+#endif
     }
 
     private IEnumerator RunSequence()
@@ -166,10 +175,10 @@ public class StageIntroSequence : MonoBehaviour
 
             while (!_videoCompleted) yield return null;
 
-            // --- 2단계: 영상 Fade Out ---
+            // --- 2단계: 영상 Fade Out + 커튼 투명도 1로 부드럽게 복원 ---
             currentState = IntroState.FadingOutVideo;
-            Debug.Log("[StageIntro] 영상 종료 -> Fade Out");
-            yield return FadeVideoAlpha(1f, 0f, videoFadeOutDuration);
+            Debug.Log("[StageIntro] 영상 종료 -> 영상 Fade Out 및 커튼 투명도 1로 복원");
+            yield return FadeVideoOutAndRestoreCurtains(1f, videoFadeOutDuration);
             videoPlayer.Stop();
             if (videoSurfaceRenderer != null) videoSurfaceRenderer.gameObject.SetActive(false);
         }
@@ -185,7 +194,7 @@ public class StageIntroSequence : MonoBehaviour
             while (!_videoCompleted) yield return null;
 
             currentState = IntroState.FadingOutVideo;
-            yield return FadeVideoAlpha(0.25f, 0f, Mathf.Min(0.8f, videoFadeOutDuration));
+            yield return FadeVideoOutAndRestoreCurtains(0.25f, Mathf.Min(0.8f, videoFadeOutDuration));
             if (videoSurfaceRenderer != null) videoSurfaceRenderer.gameObject.SetActive(false);
         }
 
@@ -336,11 +345,22 @@ public class StageIntroSequence : MonoBehaviour
         _flowerOffered = true;
     }
 
-    private IEnumerator FadeVideoAlpha(float from, float to, float duration)
+    private IEnumerator FadeVideoOutAndRestoreCurtains(float fromVideoAlpha, float duration)
     {
+        int count = curtainsToRestoreOpacity != null ? curtainsToRestoreOpacity.Length : 0;
+        float[] startOpacities = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            startOpacities[i] = curtainsToRestoreOpacity[i] != null ? curtainsToRestoreOpacity[i].Opacity : 1f;
+        }
+
         if (duration <= 0.01f)
         {
-            SetVideoAlpha(to);
+            SetVideoAlpha(0f);
+            for (int i = 0; i < count; i++)
+            {
+                if (curtainsToRestoreOpacity[i] != null) curtainsToRestoreOpacity[i].Opacity = 1f;
+            }
             yield break;
         }
 
@@ -348,10 +368,23 @@ public class StageIntroSequence : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            SetVideoAlpha(Mathf.Lerp(from, to, elapsed / duration));
+            float t = Mathf.Clamp01(elapsed / duration);
+            SetVideoAlpha(Mathf.Lerp(fromVideoAlpha, 0f, t));
+            for (int i = 0; i < count; i++)
+            {
+                if (curtainsToRestoreOpacity[i] != null)
+                {
+                    curtainsToRestoreOpacity[i].Opacity = Mathf.Lerp(startOpacities[i], 1f, t);
+                }
+            }
             yield return null;
         }
-        SetVideoAlpha(to);
+
+        SetVideoAlpha(0f);
+        for (int i = 0; i < count; i++)
+        {
+            if (curtainsToRestoreOpacity[i] != null) curtainsToRestoreOpacity[i].Opacity = 1f;
+        }
     }
 
     private void SetVideoAlpha(float alpha)

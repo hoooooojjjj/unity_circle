@@ -40,6 +40,11 @@ public class DesktopVRFallbackMovement : MonoBehaviour
 
     private void Start()
     {
+#if !UNITY_EDITOR
+        // 실제 VR 빌드(Quest 3 등)에서는 에디터 전용 이동/시선/FOV 스크립트를 완전히 비활성화
+        enabled = false;
+        return;
+#else
         var rig = GetComponentInChildren<OVRCameraRig>();
         if (headTransform == null)
         {
@@ -53,6 +58,7 @@ public class DesktopVRFallbackMovement : MonoBehaviour
         }
 
         InitializeLook();
+#endif
     }
 
     private void InitializeLook()
