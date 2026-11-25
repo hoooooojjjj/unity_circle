@@ -21,19 +21,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: HempCurtainMat
-  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Shader: {fileID: 4800000, guid: d41a39bbd1700486eb575f7de0d98860, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _ALPHAPREMULTIPLY_ON
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   - DepthOnly
@@ -44,7 +43,7 @@ Material:
     m_TexEnvs:
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: 2cbcd79e5f89f46aab4f730a9576d357, type: 3}
-        m_Scale: {x: 3, y: 5}
+        m_Scale: {x: 2.6, y: 4.2}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
@@ -103,6 +102,7 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _AmbientWarmth: 0.015
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -123,17 +123,23 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RimStrength: 0.25
     - _Smoothness: 0.05
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 1
+    - _Translucency: 0.5
+    - _WindAmplitude: 0.015
+    - _WindSpeed: 0.55
     - _WorkflowMode: 1
+    - _WrapLighting: 0.25
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.92, g: 0.8, b: 0.62, a: 0.82}
+    - _BacklightColor: {r: 0.92, g: 0.86, b: 0.72, a: 1}
+    - _BaseColor: {r: 0.48, g: 0.45, b: 0.39, a: 0.84}
     - _Color: {r: 0.92, g: 0.8, b: 0.62, a: 0.82}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

@@ -4,13 +4,15 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class ProceduralCurtainMesh : MonoBehaviour
 {
-    [SerializeField] private float width = 1.6f;
+    [SerializeField] private float width = 1.65f;
     [SerializeField] private float height = 3.0f;
-    [SerializeField] private int columns = 36;
-    [SerializeField] private int rows = 16;
-    [SerializeField] private float foldAmplitude = 0.08f;
-    [SerializeField] private float foldFrequency = 6.0f;
-    [SerializeField] private float topSag = 0.08f;
+    [SerializeField] private int columns = 48;
+    [SerializeField] private int rows = 24;
+    [SerializeField] private float foldAmplitude = 0.065f;
+    [SerializeField] private float foldFrequency = 4.5f;
+    [SerializeField] private float topSag = 0.14f;
+    [SerializeField] private float bottomWave = 0.015f;
+    [SerializeField] private float seedOffset = 0.0f;
 
     private Mesh _mesh;
 
@@ -28,8 +30,8 @@ public class ProceduralCurtainMesh : MonoBehaviour
             _mesh.hideFlags = HideFlags.DontSave;
         }
 
-        int cols = Mathf.Max(4, columns);
-        int rws = Mathf.Max(2, rows);
+        int cols = Mathf.Max(8, columns);
+        int rws = Mathf.Max(4, rows);
         int vertCount = (cols + 1) * (rws + 1);
 
         var verts = new Vector3[vertCount];
@@ -42,14 +44,31 @@ public class ProceduralCurtainMesh : MonoBehaviour
             for (int c = 0; c <= cols; c++)
             {
                 float u = (float)c / cols; // 0..1 across width
-                float x = (u - 0.5f) * width;
-                // Gentle catenary sag along top edge
-                float sag = Mathf.Sin(u * Mathf.PI) * topSag * v;
-                float y = v * height - sag;
-                // Pleated curtain folds stronger toward bottom
-                float foldWeight = Mathf.Lerp(1.0f, 0.35f, v);
-                float z = Mathf.Sin(u * foldFrequency * Mathf.PI * 2f) * foldAmplitude * foldWeight
-                        + Mathf.Sin(u * foldFrequency * 2.3f * Mathf.PI * 2f) * (foldAmplitude * 0.25f) * foldWeight;
+                float centered = u - 0.5f;
+
+                // Natural slight inward taper near top rod, gentle spread toward floor
+                float spread = Mathf.Lerp(1.03f, 0.98f, v);
+                float x = centered * width * spread;
+
+                // Natural catenary sag along top edge (like draped hemp cloth hung from two corners)
+                float catenary = Mathf.Sin(u * Mathf.PI);
+                float sag = catenary * topSag * Mathf.Pow(v, 1.3f);
+
+                // Organic slightly uneven bottom hem (like raw woven hemp)
+                float hemRipple = (Mathf.Sin((u * 7.3f + seedOffset) * Mathf.PI) * 0.55f
+                                 + Mathf.Sin((u * 15.1f + seedOffset * 2.1f) * Mathf.PI) * 0.45f)
+                                 * bottomWave * (1.0f - v);
+
+                float y = v * height - sag + hemRipple;
+
+                // Organic irregular vertical drape folds (multi-harmonic, not rigid accordion)
+                float foldWeight = Mathf.Lerp(1.0f, 0.25f, v);
+                float f1 = Mathf.Sin((u * foldFrequency + seedOffset) * Mathf.PI * 2f);
+                float f2 = Mathf.Sin((u * (foldFrequency * 1.73f) + seedOffset * 1.9f + 0.7f) * Mathf.PI * 2f) * 0.52f;
+                float f3 = Mathf.Sin((u * (foldFrequency * 3.1f) + seedOffset * 0.6f + 1.4f) * Mathf.PI * 2f) * 0.22f;
+                // Gentle vertical billow
+                float billow = Mathf.Sin(v * Mathf.PI) * 0.025f * catenary;
+                float z = (f1 + f2 + f3) * (foldAmplitude * 0.65f) * foldWeight + billow;
 
                 int idx = r * (cols + 1) + c;
                 verts[idx] = new Vector3(x, y, z);
