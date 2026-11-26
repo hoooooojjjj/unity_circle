@@ -102,7 +102,7 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AmbientWarmth: 0.015
+    - _AmbientWarmth: 0.045
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -124,23 +124,24 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimStrength: 0.25
+    - _RimStrength: 0.35
     - _Smoothness: 0.05
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 1
-    - _Translucency: 0.5
+    - _Translucency: 1.15
+    - _Whiteness: 0.38
     - _WindAmplitude: 0.015
     - _WindSpeed: 0.55
     - _WorkflowMode: 1
-    - _WrapLighting: 0.25
+    - _WrapLighting: 0.75
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BacklightColor: {r: 0.92, g: 0.86, b: 0.72, a: 1}
-    - _BaseColor: {r: 0.47999996, g: 0.45, b: 0.38999996, a: 1}
+    - _BacklightColor: {r: 0.98, g: 0.92, b: 0.82, a: 1}
+    - _BaseColor: {r: 0.88, g: 0.85, b: 0.78, a: 1}
     - _Color: {r: 0.92, g: 0.8, b: 0.62, a: 0.82}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

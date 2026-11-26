@@ -19,8 +19,15 @@ public class ProceduralCurtainMesh : MonoBehaviour
     [SerializeField] private float opacity = 1.0f;
 
     private static readonly int OpacityPropId = Shader.PropertyToID("_Opacity");
+    private static readonly int WindAmpPropId = Shader.PropertyToID("_WindAmplitude");
     private Mesh _mesh;
     private MaterialPropertyBlock _mpb;
+
+    public int Columns => Mathf.Max(8, columns);
+    public int Rows => Mathf.Max(4, rows);
+    public float Width => width;
+    public float Height => height;
+    public Mesh RuntimeMesh => _mesh;
 
     public float Opacity
     {
@@ -30,6 +37,16 @@ public class ProceduralCurtainMesh : MonoBehaviour
             opacity = Mathf.Clamp01(value);
             ApplyOpacity();
         }
+    }
+
+    public void SetShaderWindAmplitude(float amplitude)
+    {
+        var mr = GetComponent<MeshRenderer>();
+        if (mr == null) return;
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
+        mr.GetPropertyBlock(_mpb);
+        _mpb.SetFloat(WindAmpPropId, amplitude);
+        mr.SetPropertyBlock(_mpb);
     }
 
     private void OnEnable()

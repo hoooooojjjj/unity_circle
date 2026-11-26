@@ -184,14 +184,47 @@ public class VRSpawnAligner : MonoBehaviour
 
     public void AlignHorizontalOnly(Transform head)
     {
-        if (head == null || spawnPoint == null) return;
+        AlignToTransform(spawnPoint, head);
+    }
 
-        // FloorLevel 기준: 리그의 Y=0 유지 (현실 바닥 = 가상 바닥 y=0, playerScale 배율로 눈높이 반영)
+    /// <summary>
+    /// 참여자(VR 헤드셋 또는 에디터 카메라)를 지정한 위치·정면 방향으로 점프샷 정렬합니다.
+    /// - VR(Quest 3): 바닥 높이(y=0)와 playerScale은 그대로 유지한 채, 현재 머리의 수평(X, Z)과 정면(Yaw)을 target에 맞춤.
+    /// - Unity 에디터: 리그를 target 위치(기존 에디터 눈높이 유지)와 정면(Pitch 0)으로 즉시 이동.
+    /// </summary>
+    public void AlignToTransform(Transform target, Transform headOverride = null)
+    {
+        if (target == null) return;
+
+#if UNITY_EDITOR
+        Vector3 editorPos = new Vector3(target.position.x, transform.position.y, target.position.z);
+        transform.position = editorPos;
+        transform.rotation = Quaternion.Euler(0f, target.eulerAngles.y, 0f);
+
+        var fallback = GetComponent<DesktopVRFallbackMovement>();
+        if (fallback != null)
+        {
+            fallback.SnapLookTo(target.eulerAngles.y, 0f);
+        }
+        else if (_rig != null && _rig.trackingSpace != null)
+        {
+            _rig.trackingSpace.localRotation = Quaternion.identity;
+        }
+
+        Debug.Log("[VRSpawnAligner] 에디터 점프샷 정렬 완료: target=" + target.name + " pos=" + transform.position);
+#else
+        if (_rig == null) _rig = GetComponentInChildren<OVRCameraRig>();
+        Transform head = headOverride != null
+            ? headOverride
+            : ((_rig != null && _rig.centerEyeAnchor != null) ? _rig.centerEyeAnchor : Camera.main?.transform);
+        if (head == null) return;
+
+        // FloorLevel 기준: 리그의 Y=target.y(0) 유지 (현실 바닥 = 가상 바닥 y=0, playerScale 배율로 눈높이 반영)
         Vector3 rigPos = transform.position;
-        rigPos.y = spawnPoint.position.y;
+        rigPos.y = target.position.y;
         transform.position = rigPos;
 
-        // 1) 수평 시선 방향(Yaw)을 SpawnPoint 정면으로 맞춤
+        // 1) 수평 시선 방향(Yaw)을 target 정면으로 맞춤
         Vector3 flatFwd = head.forward;
         flatFwd.y = 0f;
         if (flatFwd.sqrMagnitude < 1e-4f)
@@ -202,18 +235,19 @@ public class VRSpawnAligner : MonoBehaviour
         if (flatFwd.sqrMagnitude > 1e-4f)
         {
             float headYaw = Mathf.Atan2(flatFwd.x, flatFwd.z) * Mathf.Rad2Deg;
-            float targetYaw = spawnPoint.eulerAngles.y;
+            float targetYaw = target.eulerAngles.y;
             transform.RotateAround(head.position, Vector3.up, Mathf.DeltaAngle(headYaw, targetYaw));
         }
 
-        // 2) 수평 위치(X, Z)만 SpawnPoint로 이동 (Y 높이는 절대 건드리지 않음)
+        // 2) 수평 위치(X, Z)만 target으로 이동 (Y 높이는 절대 건드리지 않음)
         Vector3 deltaXZ = new Vector3(
-            spawnPoint.position.x - head.position.x,
+            target.position.x - head.position.x,
             0f,
-            spawnPoint.position.z - head.position.z
+            target.position.z - head.position.z
         );
         transform.position += deltaXZ;
 
-        Debug.Log("[VRSpawnAligner] 6DoF 실보행 시작 정렬 완료: pos=" + head.position + " scale=" + transform.localScale.x);
+        Debug.Log("[VRSpawnAligner] 6DoF 점프샷 정렬 완료: target=" + target.name + " headPos=" + head.position + " scale=" + transform.localScale.x);
+#endif
     }
 }

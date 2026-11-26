@@ -3,7 +3,8 @@ Shader "Custom/TranslucentHempCurtain"
     Properties
     {
         _BaseMap ("Hemp Weave (RGBA)", 2D) = "white" {}
-        _BaseColor ("Tint Color", Color) = (0.96, 0.84, 0.64, 0.92)
+        _BaseColor ("Tint Color", Color) = (0.94, 0.95, 0.98, 1.0)
+        _Whiteness ("White Linen Blend (흰색 천 느낌)", Range(0.0, 1.0)) = 0.0
         _Opacity ("Opacity (투명도)", Range(0.0, 1.0)) = 1.0
         _BacklightColor ("Backlight Glow Color", Color) = (1.0, 0.76, 0.40, 1.0)
         _Translucency ("Backlight Translucency", Range(0.0, 4.0)) = 2.0
@@ -67,6 +68,7 @@ Shader "Custom/TranslucentHempCurtain"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
+                half _Whiteness;
                 half _Opacity;
                 half4 _BacklightColor;
                 half _Translucency;
@@ -125,7 +127,11 @@ Shader "Custom/TranslucentHempCurtain"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                half3 albedo = tex.rgb * _BaseColor.rgb;
+                half luma = dot(tex.rgb, half3(0.299h, 0.587h, 0.114h));
+                // Preserve hemp weave fiber relief while lifting into ethereal misty white linen
+                half3 whiteWeave = saturate(half3(luma, luma, luma) * 0.55h + 0.48h);
+                half3 weaveRgb = lerp(tex.rgb, whiteWeave, _Whiteness);
+                half3 albedo = weaveRgb * _BaseColor.rgb;
 
                 float3 normalWS = normalize(input.normalWS) * (facing >= 0 ? 1.0 : -1.0);
                 float3 viewDirWS = normalize(GetWorldSpaceViewDir(input.positionWS));
@@ -154,7 +160,12 @@ Shader "Custom/TranslucentHempCurtain"
                 float fresnel = pow(1.0 - saturate(abs(dot(normalWS, viewDirWS))), 2.6);
                 lighting += lighting * fresnel * _RimStrength;
 
-                // Boost cloth density so Opacity=1 feels rich & mostly opaque while keeping subtle weave透
+                // Soft highlight knee so close spotlights never bleach cloth color to flat white under ACES
+                half lum = max(dot(lighting, half3(0.2126h, 0.7152h, 0.0722h)), 1e-4h);
+                half compressedLum = lum / (1.0h + lum * 0.65h);
+                lighting *= (compressedLum / lum);
+
+                // Boost cloth density so Opacity=1 feels rich & mostly opaque while keeping subtle weave
                 half weaveAlpha = lerp(0.58, 1.0, tex.a);
                 half alpha = saturate(weaveAlpha * _BaseColor.a * _Opacity);
                 return half4(lighting, alpha);

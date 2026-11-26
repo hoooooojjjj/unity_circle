@@ -78,6 +78,22 @@ public class DesktopVRFallbackMovement : MonoBehaviour
         _targetPitch = _currentPitch = startPitch;
     }
 
+    /// <summary>
+    /// 점프샷/텔레포트 시 에디터 시선 스무딩 상태를 지정한 정면 각도로 즉시 고정합니다.
+    /// </summary>
+    public void SnapLookTo(float yawDegrees, float pitchDegrees = 0f)
+    {
+        _initialized = true;
+        _targetYaw = _currentYaw = yawDegrees;
+        _targetPitch = _currentPitch = Mathf.Clamp(pitchDegrees, -pitchLimit, pitchLimit);
+
+        transform.rotation = Quaternion.Euler(0f, _currentYaw, 0f);
+        if (pitchPivot != null)
+        {
+            pitchPivot.localRotation = Quaternion.Euler(_currentPitch, 0f, 0f);
+        }
+    }
+
     private void Update()
     {
         if (!IsHmdActive())
